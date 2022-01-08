@@ -10,13 +10,19 @@ namespace atsemigra
 {
     public partial class Main : Form
     {
-        Bitmap viewImage = new Bitmap(512, 384);
-        Bitmap originalImage, currenColorImage, paletteImage;
-        Color[] DigitalColor = new Color[8];
-        int color = 7;
-        int lastX, lastY;
+        private const int VIEW_SIZE_W = 512;
+        private const int VIEW_SIZE_H = 384;
+        private const int DEFAULT_VAL = 128;
 
-        string head = @"10 CLS
+        private Bitmap viewImage, originalImage, currenColorImage, paletteImage;
+        private Color[] DigitalColor;
+        private int color = 7;
+        private int lastX, lastY;
+        private string[] fileName;
+        private Size originalSize, viewSize;
+        private bool bDrawLine = false;
+
+        private string head = @"10 CLS
 20 FOR I=$C100 TO $C3FF
 30 READ T$
 40 POKE I,VAL(""$""+T$)
@@ -30,6 +36,8 @@ namespace atsemigra
         {
             InitializeComponent();
 
+            DigitalColor = new Color[8];
+
             DigitalColor[0] = Color.FromArgb(0, 0, 0); // Black;
             DigitalColor[1] = Color.FromArgb(0, 0, 255); // Blue;
             DigitalColor[2] = Color.FromArgb(255, 0, 0); // Red;
@@ -41,6 +49,13 @@ namespace atsemigra
 
             currenColorImage = new Bitmap(32, 32);
             paletteImage = new Bitmap(32, 256);
+            viewImage = new Bitmap(VIEW_SIZE_W, VIEW_SIZE_H);
+
+            viewSize.Width = VIEW_SIZE_W;
+            viewSize.Height = VIEW_SIZE_H;
+
+            originalSize.Width = 64;
+            originalSize.Height = 48;
 
             this.CurrentColor.Image = currenColorImage;
             this.ColorPalette.Image = paletteImage;
@@ -71,76 +86,8 @@ namespace atsemigra
 
         private void Main_DragDrop(object sender, DragEventArgs e)
         {
-            string[] fileName = (string[])e.Data.GetData(DataFormats.FileDrop, false);
-
-            if (fileName.Length == 1)
-            {
-                string ext = System.IO.Path.GetExtension(fileName[0]);
-                try
-                {
-                    Bitmap tmp = new Bitmap(fileName[0]);
-                    originalImage = new Bitmap(tmp, 64, 48);
-                    for (int x = 0; x < 64; ++x)
-                    {
-                        for (int y = 0; y < 48; ++y)
-                        {
-                            Color c = originalImage.GetPixel(x, y);
-                            byte r = c.R, g = c.G, b = c.B;
-                            if (r < 128)
-                            {
-                                r = 0;
-                            } else
-                            {
-                                r = 255;
-                            }
-
-                            g = c.G;
-                            if (g < 128)
-                            {
-                                g = 0;
-                            }
-                            else
-                            {
-                                g = 255;
-                            }
-
-                            b = c.B;
-                            if (b < 128)
-                            {
-                                b = 0;
-                            }
-                            else
-                            {
-                                b = 255;
-                            }
-                            originalImage.SetPixel(x, y, Color.FromArgb(r, g, b));
-                        }
-                    }
-                }
-                catch
-                {
-                    System.Media.SystemSounds.Beep.Play();
-                    return;
-                }
-
-                using (Graphics gr = Graphics.FromImage(viewImage))
-                {
-                    for (int x = 0; x < 64; ++x)
-                    {
-                        for (int y = 0; y < 48; ++y)
-                        {
-                            Color c = originalImage.GetPixel(x, y);
-                            SolidBrush br = new SolidBrush(c);
-                            gr.FillRectangle(br, x * 8, y * 8, 8, 8);
-                        }
-                    }
-
-                }
-                this.pictureBox1.Image = viewImage;
-            } else
-            {
-                System.Media.SystemSounds.Beep.Play();
-            }
+            fileName = (string[])e.Data.GetData(DataFormats.FileDrop, false);
+            SetOriginalBitmap();
         }
 
 
@@ -170,9 +117,9 @@ namespace atsemigra
             {
                 g.FillRectangle(new SolidBrush(DigitalColor[color]), x * 8, y * 8, 8, 8);
             }
-            this.pictureBox1.Refresh();
-
             originalImage.SetPixel(x, y, DigitalColor[color]);
+
+            DrawViewImage();
         }
 
 
@@ -191,11 +138,35 @@ namespace atsemigra
                 {
                     g.FillRectangle(new SolidBrush(DigitalColor[color]), x * 8, y * 8, 8, 8);
                 }
-                this.pictureBox1.Refresh();
-
                 originalImage.SetPixel(x, y, DigitalColor[color]);
+
+                DrawViewImage();
             }
         }
+
+
+        private void trkRed_ValueChanged(object sender, EventArgs e)
+        {
+            SetOriginalBitmap();
+            this.lblR_Value.Text = this.trkRed.Value.ToString();
+        }
+
+        private void trkGreen_ValueChanged(object sender, EventArgs e)
+        {
+            SetOriginalBitmap();
+            this.lblG_Value.Text = this.trkGreen.Value.ToString();
+        }
+
+        private void trkBlue_ValueChanged(object sender, EventArgs e)
+        {
+            SetOriginalBitmap();
+            this.lblB_Value.Text = this.trkBlue.Value.ToString();
+        }
+
+
+
+
+
 
         /// <summary>
         /// BINファイル出力
@@ -218,8 +189,7 @@ namespace atsemigra
             {
                 try
                 {
-                    using (FileStream stream = new FileStream(dlg.FileName, FileMode.Create, FileAccess.Write))
-                    using (BinaryWriter writer = new BinaryWriter(stream))
+                    using (BinaryWriter writer = new BinaryWriter(new FileStream(dlg.FileName, FileMode.Create, FileAccess.Write)))
                     {
                         writer.Write(tvram);
                         writer.Write(avram);
@@ -232,6 +202,25 @@ namespace atsemigra
             }
         }
 
+        private void btnColorReset_Click(object sender, EventArgs e)
+        {
+            trkRed.Value = DEFAULT_VAL;
+            lblR_Value.Text = trkRed.Value.ToString();
+
+            trkGreen.Value = DEFAULT_VAL;
+            lblG_Value.Text = trkGreen.Value.ToString();
+
+            trkBlue.Value = DEFAULT_VAL;
+            lblB_Value.Text = trkBlue.Value.ToString();
+
+            SetOriginalBitmap();
+        }
+
+        private void chkGuideLine_CheckedChanged(object sender, EventArgs e)
+        {
+            bDrawLine = ((CheckBox)sender).Checked;
+            DrawViewImage();
+        }
 
 
         /// <summary>
@@ -261,8 +250,7 @@ namespace atsemigra
             {
                 try
                 {
-                    using (FileStream stream = new FileStream(dlg.FileName, FileMode.Create, FileAccess.Write))
-                    using (BinaryWriter writer = new BinaryWriter(stream))
+                    using (BinaryWriter writer = new BinaryWriter(new FileStream(dlg.FileName, FileMode.Create, FileAccess.Write)))
                     {
                         writer.Write(cjrfile.GetCjrData());
                     }
@@ -399,6 +387,99 @@ namespace atsemigra
             }
             tvram = tvlist.ToArray();
             avram = avlist.ToArray();
+        }
+
+
+
+
+        /// <summary>
+        /// 画像ファイルの読み込み
+        /// </summary>
+        private void SetOriginalBitmap()
+        {
+            if (fileName != null && (fileName.Length == 1))
+            {
+                try
+                {
+                    originalImage = new Bitmap(new Bitmap(fileName[0]), originalSize);
+                    viewImage = new Bitmap(viewSize.Width, viewSize.Height);
+
+                    for (int x = 0; x < originalSize.Width; ++x)
+                    {
+                        for (int y = 0; y < originalSize.Height; ++y)
+                        {
+                            Color c = originalImage.GetPixel(x, y);
+                            byte r = c.R, g = c.G, b = c.B;
+                            if (r < this.trkRed.Value)
+                            {
+                                r = 0;
+                            }
+                            else
+                            {
+                                r = 255;
+                            }
+
+                            g = c.G;
+                            if (g < this.trkGreen.Value)
+                            {
+                                g = 0;
+                            }
+                            else
+                            {
+                                g = 255;
+                            }
+
+                            b = c.B;
+                            if (b < this.trkBlue.Value)
+                            {
+                                b = 0;
+                            }
+                            else
+                            {
+                                b = 255;
+                            }
+                            originalImage.SetPixel(x, y, Color.FromArgb(r, g, b));
+                        }
+                    }
+                }
+                catch
+                {
+                    System.Media.SystemSounds.Beep.Play();
+                    return;
+                }
+                DrawViewImage();
+            }
+            else
+            {
+                System.Media.SystemSounds.Beep.Play();
+            }
+        }
+
+
+        /// <summary>
+        /// viewイメージ描画
+        /// </summary>
+        void DrawViewImage()
+        {
+            using (Graphics gr = Graphics.FromImage(viewImage))
+            {
+                var pen = new Pen(new SolidBrush(Color.Red), 1);
+                for (int x = 0; x < originalSize.Width; ++x)
+                {
+                    for (int y = 0; y < originalSize.Height; ++y)
+                    {
+                        Color c = originalImage.GetPixel(x, y);
+                        SolidBrush br = new SolidBrush(c);
+                        gr.FillRectangle(br, x * 8, y * 8, 8, 8);
+                        if (bDrawLine && (y % 2 == 0))
+                            gr.DrawLine(pen, new Point(0, y * 8), new Point(viewSize.Width * 8, y * 8));
+                    }
+                    if (bDrawLine && x % 2 == 0)
+                        gr.DrawLine(pen, new Point(x * 8, 0), new Point(x * 8, viewSize.Height * 8));
+                }
+
+            }
+            this.pictureBox1.Image = viewImage;
         }
     }
 }

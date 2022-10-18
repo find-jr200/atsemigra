@@ -219,7 +219,8 @@ namespace atsemigra
         private void chkGuideLine_CheckedChanged(object sender, EventArgs e)
         {
             bDrawLine = ((CheckBox)sender).Checked;
-            DrawViewImage();
+            if (originalImage != null)
+                DrawViewImage();
         }
 
 

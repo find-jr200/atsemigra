@@ -47,29 +47,40 @@
             this.label4 = new System.Windows.Forms.Label();
             this.btnColorReset = new System.Windows.Forms.Button();
             this.chkGuideLine = new System.Windows.Forms.CheckBox();
+            this.txtScript = new System.Windows.Forms.TextBox();
+            this.panel1 = new System.Windows.Forms.Panel();
+            this.btnTextEnable = new System.Windows.Forms.Button();
+            this.btnTextWrite = new System.Windows.Forms.Button();
+            this.btnTextCjrOutput = new System.Windows.Forms.Button();
+            this.panel2 = new System.Windows.Forms.Panel();
+            this.btnInitialize = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.ColorPalette)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.CurrentColor)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.trkRed)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.trkGreen)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.trkBlue)).BeginInit();
+            this.panel1.SuspendLayout();
+            this.panel2.SuspendLayout();
             this.SuspendLayout();
             // 
             // pictureBox1
             // 
-            this.pictureBox1.Location = new System.Drawing.Point(12, 12);
+            this.pictureBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pictureBox1.Location = new System.Drawing.Point(10, 12);
             this.pictureBox1.Name = "pictureBox1";
             this.pictureBox1.Size = new System.Drawing.Size(512, 384);
             this.pictureBox1.TabIndex = 0;
             this.pictureBox1.TabStop = false;
             this.pictureBox1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.pictureBox1_MouseDown);
             this.pictureBox1.MouseMove += new System.Windows.Forms.MouseEventHandler(this.pictureBox1_MouseMove);
+            this.pictureBox1.MouseUp += new System.Windows.Forms.MouseEventHandler(this.pictureBox1_MouseUp);
             // 
             // btnOutput
             // 
-            this.btnOutput.Location = new System.Drawing.Point(503, 449);
+            this.btnOutput.Location = new System.Drawing.Point(516, 63);
             this.btnOutput.Name = "btnOutput";
-            this.btnOutput.Size = new System.Drawing.Size(79, 22);
+            this.btnOutput.Size = new System.Drawing.Size(75, 23);
             this.btnOutput.TabIndex = 13;
             this.btnOutput.Text = "BASIC出力";
             this.btnOutput.UseVisualStyleBackColor = true;
@@ -77,7 +88,7 @@
             // 
             // ColorPalette
             // 
-            this.ColorPalette.Location = new System.Drawing.Point(542, 99);
+            this.ColorPalette.Location = new System.Drawing.Point(555, 99);
             this.ColorPalette.Name = "ColorPalette";
             this.ColorPalette.Size = new System.Drawing.Size(32, 256);
             this.ColorPalette.TabIndex = 4;
@@ -86,7 +97,7 @@
             // 
             // CurrentColor
             // 
-            this.CurrentColor.Location = new System.Drawing.Point(542, 40);
+            this.CurrentColor.Location = new System.Drawing.Point(555, 40);
             this.CurrentColor.Name = "CurrentColor";
             this.CurrentColor.Size = new System.Drawing.Size(32, 32);
             this.CurrentColor.TabIndex = 5;
@@ -95,15 +106,15 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(528, 16);
+            this.label2.Location = new System.Drawing.Point(541, 16);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(51, 12);
-            this.label2.TabIndex = 14;
+            this.label2.TabIndex = 0;
             this.label2.Text = "現在の色";
             // 
             // btnCjrOutput
             // 
-            this.btnCjrOutput.Location = new System.Drawing.Point(422, 449);
+            this.btnCjrOutput.Location = new System.Drawing.Point(516, 34);
             this.btnCjrOutput.Name = "btnCjrOutput";
             this.btnCjrOutput.Size = new System.Drawing.Size(75, 23);
             this.btnCjrOutput.TabIndex = 12;
@@ -113,7 +124,7 @@
             // 
             // btnBinOutput
             // 
-            this.btnBinOutput.Location = new System.Drawing.Point(341, 449);
+            this.btnBinOutput.Location = new System.Drawing.Point(516, 7);
             this.btnBinOutput.Name = "btnBinOutput";
             this.btnBinOutput.Size = new System.Drawing.Size(75, 23);
             this.btnBinOutput.TabIndex = 11;
@@ -123,7 +134,7 @@
             // 
             // trkRed
             // 
-            this.trkRed.Location = new System.Drawing.Point(12, 403);
+            this.trkRed.Location = new System.Drawing.Point(43, 3);
             this.trkRed.Maximum = 255;
             this.trkRed.Name = "trkRed";
             this.trkRed.Size = new System.Drawing.Size(104, 45);
@@ -133,7 +144,7 @@
             // 
             // trkGreen
             // 
-            this.trkGreen.Location = new System.Drawing.Point(122, 403);
+            this.trkGreen.Location = new System.Drawing.Point(148, 3);
             this.trkGreen.Maximum = 255;
             this.trkGreen.Name = "trkGreen";
             this.trkGreen.Size = new System.Drawing.Size(104, 45);
@@ -143,7 +154,7 @@
             // 
             // trkBlue
             // 
-            this.trkBlue.Location = new System.Drawing.Point(223, 402);
+            this.trkBlue.Location = new System.Drawing.Point(253, 3);
             this.trkBlue.Maximum = 255;
             this.trkBlue.Name = "trkBlue";
             this.trkBlue.Size = new System.Drawing.Size(104, 45);
@@ -154,7 +165,7 @@
             // lblR_Value
             // 
             this.lblR_Value.AutoSize = true;
-            this.lblR_Value.Location = new System.Drawing.Point(53, 435);
+            this.lblR_Value.Location = new System.Drawing.Point(84, 36);
             this.lblR_Value.Name = "lblR_Value";
             this.lblR_Value.Size = new System.Drawing.Size(23, 12);
             this.lblR_Value.TabIndex = 2;
@@ -163,7 +174,7 @@
             // lblG_Value
             // 
             this.lblG_Value.AutoSize = true;
-            this.lblG_Value.Location = new System.Drawing.Point(165, 435);
+            this.lblG_Value.Location = new System.Drawing.Point(190, 36);
             this.lblG_Value.Name = "lblG_Value";
             this.lblG_Value.Size = new System.Drawing.Size(23, 12);
             this.lblG_Value.TabIndex = 5;
@@ -172,7 +183,7 @@
             // lblB_Value
             // 
             this.lblB_Value.AutoSize = true;
-            this.lblB_Value.Location = new System.Drawing.Point(264, 435);
+            this.lblB_Value.Location = new System.Drawing.Point(295, 35);
             this.lblB_Value.Name = "lblB_Value";
             this.lblB_Value.Size = new System.Drawing.Size(23, 12);
             this.lblB_Value.TabIndex = 8;
@@ -181,7 +192,7 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(32, 436);
+            this.label1.Location = new System.Drawing.Point(63, 36);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(15, 12);
             this.label1.TabIndex = 1;
@@ -190,7 +201,7 @@
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(144, 436);
+            this.label3.Location = new System.Drawing.Point(169, 35);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(15, 12);
             this.label3.TabIndex = 4;
@@ -199,7 +210,7 @@
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(243, 436);
+            this.label4.Location = new System.Drawing.Point(274, 36);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(15, 12);
             this.label4.TabIndex = 7;
@@ -207,49 +218,126 @@
             // 
             // btnColorReset
             // 
-            this.btnColorReset.Location = new System.Drawing.Point(146, 454);
+            this.btnColorReset.Location = new System.Drawing.Point(137, 58);
             this.btnColorReset.Name = "btnColorReset";
-            this.btnColorReset.Size = new System.Drawing.Size(75, 23);
+            this.btnColorReset.Size = new System.Drawing.Size(129, 23);
             this.btnColorReset.TabIndex = 9;
-            this.btnColorReset.Text = "Reset";
+            this.btnColorReset.Text = "ファイル再読み込み";
             this.btnColorReset.UseVisualStyleBackColor = true;
             this.btnColorReset.Click += new System.EventHandler(this.btnColorReset_Click);
             // 
             // chkGuideLine
             // 
             this.chkGuideLine.AutoSize = true;
-            this.chkGuideLine.Location = new System.Drawing.Point(372, 403);
+            this.chkGuideLine.Location = new System.Drawing.Point(376, 58);
             this.chkGuideLine.Name = "chkGuideLine";
-            this.chkGuideLine.Size = new System.Drawing.Size(78, 16);
+            this.chkGuideLine.Size = new System.Drawing.Size(70, 16);
             this.chkGuideLine.TabIndex = 10;
-            this.chkGuideLine.Text = "Guide Line";
+            this.chkGuideLine.Text = "Grid Line";
             this.chkGuideLine.UseVisualStyleBackColor = true;
             this.chkGuideLine.CheckedChanged += new System.EventHandler(this.chkGuideLine_CheckedChanged);
+            // 
+            // txtScript
+            // 
+            this.txtScript.Enabled = false;
+            this.txtScript.Font = new System.Drawing.Font("MS UI Gothic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
+            this.txtScript.ImeMode = System.Windows.Forms.ImeMode.On;
+            this.txtScript.Location = new System.Drawing.Point(136, 9);
+            this.txtScript.Multiline = true;
+            this.txtScript.Name = "txtScript";
+            this.txtScript.Size = new System.Drawing.Size(233, 51);
+            this.txtScript.TabIndex = 1;
+            // 
+            // panel1
+            // 
+            this.panel1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel1.Controls.Add(this.btnTextEnable);
+            this.panel1.Controls.Add(this.btnTextWrite);
+            this.panel1.Controls.Add(this.btnTextCjrOutput);
+            this.panel1.Controls.Add(this.txtScript);
+            this.panel1.Location = new System.Drawing.Point(13, 500);
+            this.panel1.Name = "panel1";
+            this.panel1.Size = new System.Drawing.Size(602, 68);
+            this.panel1.TabIndex = 3;
+            // 
+            // btnTextEnable
+            // 
+            this.btnTextEnable.Location = new System.Drawing.Point(3, 11);
+            this.btnTextEnable.Name = "btnTextEnable";
+            this.btnTextEnable.Size = new System.Drawing.Size(103, 23);
+            this.btnTextEnable.TabIndex = 0;
+            this.btnTextEnable.Text = "あっと漢字有効化";
+            this.btnTextEnable.UseVisualStyleBackColor = true;
+            this.btnTextEnable.Click += new System.EventHandler(this.btnTextEnable_Click);
+            // 
+            // btnTextWrite
+            // 
+            this.btnTextWrite.Enabled = false;
+            this.btnTextWrite.Location = new System.Drawing.Point(403, 11);
+            this.btnTextWrite.Name = "btnTextWrite";
+            this.btnTextWrite.Size = new System.Drawing.Size(75, 23);
+            this.btnTextWrite.TabIndex = 2;
+            this.btnTextWrite.Text = "書き込み";
+            this.btnTextWrite.UseVisualStyleBackColor = true;
+            this.btnTextWrite.Click += new System.EventHandler(this.btnTextWrite_Click);
+            // 
+            // btnTextCjrOutput
+            // 
+            this.btnTextCjrOutput.Cursor = System.Windows.Forms.Cursors.Default;
+            this.btnTextCjrOutput.Enabled = false;
+            this.btnTextCjrOutput.Location = new System.Drawing.Point(515, 11);
+            this.btnTextCjrOutput.Name = "btnTextCjrOutput";
+            this.btnTextCjrOutput.Size = new System.Drawing.Size(75, 23);
+            this.btnTextCjrOutput.TabIndex = 3;
+            this.btnTextCjrOutput.Text = "CJR出力";
+            this.btnTextCjrOutput.UseVisualStyleBackColor = true;
+            this.btnTextCjrOutput.Click += new System.EventHandler(this.btnTextCjrOutput_Click);
+            // 
+            // panel2
+            // 
+            this.panel2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel2.Controls.Add(this.label1);
+            this.panel2.Controls.Add(this.label3);
+            this.panel2.Controls.Add(this.lblR_Value);
+            this.panel2.Controls.Add(this.label4);
+            this.panel2.Controls.Add(this.chkGuideLine);
+            this.panel2.Controls.Add(this.lblG_Value);
+            this.panel2.Controls.Add(this.btnBinOutput);
+            this.panel2.Controls.Add(this.btnColorReset);
+            this.panel2.Controls.Add(this.lblB_Value);
+            this.panel2.Controls.Add(this.btnOutput);
+            this.panel2.Controls.Add(this.btnCjrOutput);
+            this.panel2.Controls.Add(this.trkGreen);
+            this.panel2.Controls.Add(this.trkRed);
+            this.panel2.Controls.Add(this.trkBlue);
+            this.panel2.Location = new System.Drawing.Point(12, 403);
+            this.panel2.Name = "panel2";
+            this.panel2.Size = new System.Drawing.Size(603, 91);
+            this.panel2.TabIndex = 2;
+            // 
+            // btnInitialize
+            // 
+            this.btnInitialize.Location = new System.Drawing.Point(533, 373);
+            this.btnInitialize.Name = "btnInitialize";
+            this.btnInitialize.Size = new System.Drawing.Size(75, 23);
+            this.btnInitialize.TabIndex = 1;
+            this.btnInitialize.Text = "初期化";
+            this.btnInitialize.UseVisualStyleBackColor = true;
+            this.btnInitialize.Click += new System.EventHandler(this.btnInitialize_Click);
             // 
             // Main
             // 
             this.AllowDrop = true;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(586, 484);
-            this.Controls.Add(this.chkGuideLine);
-            this.Controls.Add(this.btnColorReset);
-            this.Controls.Add(this.label4);
-            this.Controls.Add(this.label3);
-            this.Controls.Add(this.label1);
-            this.Controls.Add(this.lblB_Value);
-            this.Controls.Add(this.lblG_Value);
-            this.Controls.Add(this.lblR_Value);
-            this.Controls.Add(this.trkBlue);
-            this.Controls.Add(this.trkGreen);
-            this.Controls.Add(this.trkRed);
-            this.Controls.Add(this.btnBinOutput);
-            this.Controls.Add(this.btnCjrOutput);
+            this.ClientSize = new System.Drawing.Size(620, 573);
+            this.Controls.Add(this.btnInitialize);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.CurrentColor);
             this.Controls.Add(this.ColorPalette);
-            this.Controls.Add(this.btnOutput);
             this.Controls.Add(this.pictureBox1);
+            this.Controls.Add(this.panel1);
+            this.Controls.Add(this.panel2);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
@@ -263,6 +351,10 @@
             ((System.ComponentModel.ISupportInitialize)(this.trkRed)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.trkGreen)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.trkBlue)).EndInit();
+            this.panel1.ResumeLayout(false);
+            this.panel1.PerformLayout();
+            this.panel2.ResumeLayout(false);
+            this.panel2.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -288,6 +380,13 @@
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Button btnColorReset;
         private System.Windows.Forms.CheckBox chkGuideLine;
+        private System.Windows.Forms.TextBox txtScript;
+        private System.Windows.Forms.Panel panel1;
+        private System.Windows.Forms.Panel panel2;
+        private System.Windows.Forms.Button btnTextCjrOutput;
+        private System.Windows.Forms.Button btnInitialize;
+        private System.Windows.Forms.Button btnTextWrite;
+        private System.Windows.Forms.Button btnTextEnable;
     }
 }
 

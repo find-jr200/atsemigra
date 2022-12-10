@@ -4,7 +4,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.IO;
 using System.Collections.Generic;
-
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace atsemigra
 {
@@ -12,15 +12,24 @@ namespace atsemigra
     {
         private const int VIEW_SIZE_W = 512;
         private const int VIEW_SIZE_H = 384;
+
+        private const int TEXT_SIZE_W = 256;
+        private const int TEXT_SIZE_H = 32;
+
+        private const int ORG_SIZE_W = 64;
+        private const int ORG_SIZE_H = 48;
+
         private const int DEFAULT_VAL = 128;
 
-        private Bitmap viewImage, originalImage, currenColorImage, paletteImage;
+        private Bitmap viewImage, originalImage, currenColorImage, paletteImage, textImage;
         private Color[] DigitalColor;
         private int color = 7;
         private int lastX, lastY;
         private string[] fileName;
-        private Size originalSize, viewSize;
-        private bool bDrawLine = false;
+        private Size originalSize, viewSize, textSize;
+        private bool bDrawLine = false, bTextEnable = false;
+        private readonly Dictionary<int, byte[]> kanjidata;
+        private byte[] charData;
 
         private string head = @"10 CLS
 20 FOR I=$C100 TO $C3FF
@@ -35,6 +44,22 @@ namespace atsemigra
         public Main()
         {
             InitializeComponent();
+
+            var formatter = new BinaryFormatter();
+            try
+            {
+                using (var fileStr = new System.IO.FileStream("kanji.dat", System.IO.FileMode.Open))
+                {
+                    kanjidata = formatter.Deserialize(fileStr) as Dictionary<int, byte[]>;
+                }
+            }
+            catch
+            {
+                MessageBox.Show("漢字データをロードできません。あっと漢字機能は使用できません。", "注意", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                this.btnTextEnable.Enabled = false;
+                this.btnTextWrite.Enabled = false;
+                this.btnTextCjrOutput.Enabled = false;
+            }
 
             DigitalColor = new Color[8];
 
@@ -54,22 +79,29 @@ namespace atsemigra
             viewSize.Width = VIEW_SIZE_W;
             viewSize.Height = VIEW_SIZE_H;
 
-            originalSize.Width = 64;
-            originalSize.Height = 48;
+            textSize.Width = 0;
+            textSize.Height = 0;
+
+            originalSize.Width = ORG_SIZE_W;
+            originalSize.Height = ORG_SIZE_H;
 
             this.CurrentColor.Image = currenColorImage;
             this.ColorPalette.Image = paletteImage;
 
-            using (Graphics g = Graphics.FromImage(currenColorImage))
+            using (var g = Graphics.FromImage(currenColorImage))
             {
-                g.FillRectangle(new SolidBrush(DigitalColor[color]), 0, 0, 32, 32);
+                using (var br = new SolidBrush(DigitalColor[color]))
+                    g.FillRectangle(br, 0, 0, 32, 32);
             }
 
-            using (Graphics g = Graphics.FromImage(paletteImage))
+            using (var g = Graphics.FromImage(paletteImage))
             {
-                for (int i = 0; i < 8; i++)
-                    g.FillRectangle(new SolidBrush(DigitalColor[i]), 0, i * 31, 32, 32);
+                for (int i = 0; i < 8; ++i)
+                    using (var br = new SolidBrush(DigitalColor[i]))
+                        g.FillRectangle(br, 0, i * 31, 32, 32);
             }
+            charData = new byte[128 * 8];
+            ClearOrigimalImage(0);
         }
 
 
@@ -78,7 +110,8 @@ namespace atsemigra
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
             {
                 e.Effect = DragDropEffects.Move;
-            } else
+            }
+            else
             {
                 e.Effect = DragDropEffects.None;
             }
@@ -86,6 +119,10 @@ namespace atsemigra
 
         private void Main_DragDrop(object sender, DragEventArgs e)
         {
+            this.trkBlue.Value = DEFAULT_VAL;
+            this.trkGreen.Value = DEFAULT_VAL;
+            this.trkRed.Value = DEFAULT_VAL;
+
             fileName = (string[])e.Data.GetData(DataFormats.FileDrop, false);
             SetOriginalBitmap();
         }
@@ -96,7 +133,8 @@ namespace atsemigra
             color = (int)(e.Y / 32);
             using (Graphics g = Graphics.FromImage(currenColorImage))
             {
-                g.FillRectangle(new SolidBrush(DigitalColor[color]), 0, 0, 32, 32);
+                using (var br = new SolidBrush(DigitalColor[color]))
+                    g.FillRectangle(br, 0, 0, 32, 32);
             }
             this.CurrentColor.Refresh();
         }
@@ -108,24 +146,26 @@ namespace atsemigra
             if (viewImage == null || originalImage == null || e.Button != MouseButtons.Left)
                 return;
 
+            if (e.X < 0 || e.Y < 0 || e.X >= viewImage.Width || e.Y >= viewImage.Height - (textSize.Height * 2))
+            {
+                lastX = e.X;
+                lastY = e.Y;
+                return;
+            }
+
             int x = (int)(e.X / 8);
             int y = (int)(e.Y / 8);
+
+            originalImage.SetPixel(x, y, DigitalColor[color]);
             lastX = x;
             lastY = y;
-
-            using (Graphics g = Graphics.FromImage(viewImage))
-            {
-                g.FillRectangle(new SolidBrush(DigitalColor[color]), x * 8, y * 8, 8, 8);
-            }
-            originalImage.SetPixel(x, y, DigitalColor[color]);
-
             DrawViewImage();
         }
 
 
         private void pictureBox1_MouseMove(object sender, MouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Left && e.X >= 0 && e.Y >= 0 && e.X < viewImage.Width && e.Y < viewImage.Height)
+            if (e.Button == MouseButtons.Left && e.X >= 0 && e.Y >= 0 && e.X < viewImage.Width && e.Y < viewImage.Height - textSize.Height)
             {
                 if (viewImage == null || originalImage == null)
                     return;
@@ -133,16 +173,25 @@ namespace atsemigra
                 int x = (int)(e.X / 8);
                 int y = (int)(e.Y / 8);
 
-
-                using (Graphics g = Graphics.FromImage(viewImage))
+                using (var g = Graphics.FromImage(originalImage))
                 {
-                    g.FillRectangle(new SolidBrush(DigitalColor[color]), x * 8, y * 8, 8, 8);
+                    using (var pen = new Pen(DigitalColor[color]))
+                    g.DrawLine(pen, lastX, lastY, x, y);
                 }
-                originalImage.SetPixel(x, y, DigitalColor[color]);
+                lastX = x;
+                lastY = y;
 
                 DrawViewImage();
             }
         }
+
+
+
+        private void pictureBox1_MouseUp(object sender, MouseEventArgs e)
+        {
+            DrawViewImage();
+        }
+
 
 
         private void trkRed_ValueChanged(object sender, EventArgs e)
@@ -162,9 +211,6 @@ namespace atsemigra
             SetOriginalBitmap();
             this.lblB_Value.Text = this.trkBlue.Value.ToString();
         }
-
-
-
 
 
 
@@ -197,7 +243,7 @@ namespace atsemigra
                 }
                 catch
                 {
-                    MessageBox.Show("書き込みに失敗しました");
+                    MessageBox.Show("書き込みに失敗しました", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }
@@ -205,15 +251,42 @@ namespace atsemigra
         private void btnColorReset_Click(object sender, EventArgs e)
         {
             trkRed.Value = DEFAULT_VAL;
-            lblR_Value.Text = trkRed.Value.ToString();
-
             trkGreen.Value = DEFAULT_VAL;
-            lblG_Value.Text = trkGreen.Value.ToString();
-
             trkBlue.Value = DEFAULT_VAL;
-            lblB_Value.Text = trkBlue.Value.ToString();
 
             SetOriginalBitmap();
+        }
+
+        private void btnTextCjrOutput_Click(object sender, EventArgs e)
+        {
+            byte[] tvram, avram;
+
+            SetVramArray(out tvram, out avram, false);
+            var cjrfile = new CjrFormat();
+            cjrfile.AddBinData(charData, "GRAPH", 0xd400, false);
+            cjrfile.AddBinData(tvram, "GRAPH", 0xc100, false, true);
+            cjrfile.AddBinData(avram, "GRAPH", 0xc500, false, true);
+            cjrfile.CloseCjrData();
+            cjrfile.SetBaudRate(CjrFormat.BaudRate.High);
+
+            SaveFileDialog dlg = new SaveFileDialog();
+            dlg.InitialDirectory = (System.Environment.GetFolderPath(Environment.SpecialFolder.Personal));
+            dlg.Filter = "CJRファイル(*.cjr)|*.cjr|すべてのファイル(*.*)|*.*";
+
+            if (dlg.ShowDialog() == DialogResult.OK)
+            {
+                try
+                {
+                    using (var writer = new BinaryWriter(new FileStream(dlg.FileName, FileMode.Create, FileAccess.Write)))
+                    {
+                        writer.Write(cjrfile.GetCjrData());
+                    }
+                }
+                catch
+                {
+                    MessageBox.Show("書き込みに失敗しました", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
         }
 
         private void chkGuideLine_CheckedChanged(object sender, EventArgs e)
@@ -222,6 +295,151 @@ namespace atsemigra
             if (originalImage != null)
                 DrawViewImage();
         }
+
+        private void btnInitialize_Click(object sender, EventArgs e)
+        {
+            var result = MessageBox.Show($"カラー {color} で初期化します。よろしいですか？", "確認", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            if (result == DialogResult.No)
+                return;
+
+            ClearOrigimalImage(color);
+        }
+
+        private void btnTextWrite_Click(object sender, EventArgs e)
+        {
+            string text = this.txtScript.Text.Trim();
+            if (text.Length == 0)
+                return;
+
+            Encoding sjisEnc = Encoding.GetEncoding("Shift_JIS");
+            byte[] bytes = sjisEnc.GetBytes(text);
+
+            using (var g = Graphics.FromImage(textImage))
+            {
+                using (var br = new SolidBrush(Color.Black))
+                    g.FillRectangle(br, 0, 0, textSize.Width, textSize.Height);
+            }
+
+            for (int i = 0; i < 128 * 8; ++i)
+                charData[i] = 0;
+
+            int gx = 0, gy = 0;
+            bool bLineFull = false;
+
+            for (int i = 0; i < bytes.Length; i += 2)
+            {
+                byte b = bytes[i];
+                int code = (b << 8) + bytes[i + 1];
+
+                if (code == 0xd0a && !bLineFull)
+                {
+                    gy += 16;
+                    if (gy >= 32) break;
+                    gx = 0;
+                    bLineFull = false;
+                    continue;
+                }
+
+                byte[] kanji;
+                try
+                {
+                    kanji = kanjidata[code];
+                }
+                catch
+                {
+                    continue;
+                }
+
+                for (int y = 0; y < 16; ++y)
+                {
+                    for (int x = 0; x < 16; ++x)
+                    {
+                        byte line = kanji[(int)(x / 8) + y * 2];
+                        int mask = 0x80 >> (x >= 8 ? x - 8 : x);
+                        int color;
+                        if ((line & mask) != 0)
+                            color = 7;
+                        else
+                            color = 0;
+
+                        textImage.SetPixel(gx + x, gy + y, DigitalColor[color]);
+                    }
+                }
+
+                int offset = ((int)(gy / 16) * 16) * 32 + (int)(gx / 16) * 16;
+
+                for (int k = 0; k < 16; k += 2)
+                {
+                    charData[offset + k / 2] = kanji[k];
+                    charData[offset + k / 2 + 8] = kanji[k + 1];
+
+                    charData[offset + k / 2 + 256] = kanji[k + 16];
+                    charData[offset + k / 2 + 8 + 256] = kanji[k + 17];
+                }
+
+                gx += 16;
+                if (gx >= 256)
+                {
+                    bLineFull = true;
+                    gx = 0;
+                    gy += 16;
+                    if (gy >= 32) break;
+                }
+
+            }
+            DrawViewImage();
+        }
+
+        private void btnTextEnable_Click(object sender, EventArgs e)
+        {
+            var result = MessageBox.Show($"カラー {color} で初期化します。よろしいですか？", "確認", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            if (result == DialogResult.No)
+                return;
+
+            bTextEnable = !bTextEnable;
+
+            if (bTextEnable)
+            {
+                textSize.Width = TEXT_SIZE_W;
+                textSize.Height = TEXT_SIZE_H;
+
+                originalSize.Width = ORG_SIZE_W;
+                originalSize.Height = ORG_SIZE_H - 8;
+
+                this.txtScript.Enabled = true;
+                this.btnTextCjrOutput.Enabled = true;
+                this.btnTextWrite.Enabled = true;
+
+                this.btnBinOutput.Enabled = false;
+                this.btnCjrOutput.Enabled = false;
+                this.btnOutput.Enabled = false;
+
+                textImage = new Bitmap(textSize.Width, textSize.Height);
+                this.btnTextEnable.Text = "あっと漢字無効化";
+            }
+            else
+            {
+                textSize.Width = 0;
+                textSize.Height = 0;
+
+                originalSize.Width = ORG_SIZE_W;
+                originalSize.Height = ORG_SIZE_H;
+
+                this.txtScript.Enabled = false;
+                this.btnTextCjrOutput.Enabled = false;
+                this.btnTextWrite.Enabled = false;
+
+                this.btnBinOutput.Enabled = true;
+                this.btnCjrOutput.Enabled = true;
+                this.btnOutput.Enabled = true;
+
+                textImage = null;
+                this.btnTextEnable.Text = "あっと漢字有効化";
+
+            }
+            ClearOrigimalImage(color);
+        }
+
 
 
         /// <summary>
@@ -258,7 +476,7 @@ namespace atsemigra
                 }
                 catch
                 {
-                    MessageBox.Show("書き込みに失敗しました");
+                    MessageBox.Show("書き込みに失敗しました", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }
@@ -323,21 +541,27 @@ namespace atsemigra
                 }
                 catch
                 {
-                    MessageBox.Show("書き込みに失敗しました");
+                    MessageBox.Show("書き込みに失敗しました", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }
 
 
-
-        void SetVramArray(out byte[] tvram, out byte[] avram)
+        /// <summary>
+        /// OriginalImageビットマップデータをもとにJR-200のTVRAM, AVRAMのデータを作成
+        /// テキスト領域有効の場合はフォントデータも追加
+        /// </summary>
+        /// <param name="tvram"></param>
+        /// <param name="avram"></param>
+        /// <param name="bImageOnly">テキスト領域向こうの場合true</param>
+        void SetVramArray(out byte[] tvram, out byte[] avram, bool bImageOnly = true)
         {
             var tvlist = new List<byte>();
             var avlist = new List<byte>();
 
-            for (int y = 0; y < 48; y += 2)
+            for (int y = 0; y < originalSize.Height; y += 2)
             {
-                for (int x = 0; x < 64; x += 2)
+                for (int x = 0; x < originalSize.Width; x += 2)
                 {
                     StringBuilder sbt = new StringBuilder();
                     StringBuilder sba = new StringBuilder();
@@ -385,6 +609,16 @@ namespace atsemigra
                     tvlist.Add((byte)t);
                     avlist.Add((byte)a);
                 }
+            }
+
+            if (!bImageOnly)
+            {
+                for (int i = 0x80; i <= 0xff; ++i)
+                {
+                    tvlist.Add((byte)i);
+                    avlist.Add(7);
+                }
+                
             }
             tvram = tvlist.ToArray();
             avram = avlist.ToArray();
@@ -462,25 +696,62 @@ namespace atsemigra
         /// </summary>
         void DrawViewImage()
         {
-            using (Graphics gr = Graphics.FromImage(viewImage))
+            using (var gr = Graphics.FromImage(viewImage))
             {
-                var pen = new Pen(new SolidBrush(Color.Red), 1);
-                for (int x = 0; x < originalSize.Width; ++x)
-                {
-                    for (int y = 0; y < originalSize.Height; ++y)
-                    {
-                        Color c = originalImage.GetPixel(x, y);
-                        SolidBrush br = new SolidBrush(c);
-                        gr.FillRectangle(br, x * 8, y * 8, 8, 8);
-                        if (bDrawLine && (y % 2 == 0))
-                            gr.DrawLine(pen, new Point(0, y * 8), new Point(viewSize.Width * 8, y * 8));
-                    }
-                    if (bDrawLine && x % 2 == 0)
-                        gr.DrawLine(pen, new Point(x * 8, 0), new Point(x * 8, viewSize.Height * 8));
-                }
+                if (viewImage == null || originalImage == null) return;
 
+                gr.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+                using (var brkBrush = new SolidBrush(Color.Black))
+                    gr.FillRectangle(brkBrush, new Rectangle(0, 0, viewSize.Width, viewSize.Height));
+
+                if (bTextEnable)
+                    gr.DrawImage(textImage, 0, (192 - 32) * 2, viewSize.Width, textSize.Height * 2);
+
+                using (var magPen = new Pen(DigitalColor[3])) {
+                    for (int x = 0; x < originalSize.Width; ++x)
+                    {
+                        for (int y = 0; y < originalSize.Height; ++y)
+                        {
+                            Color c = originalImage.GetPixel(x, y);
+                            using (var br = new SolidBrush(c))
+                            {
+                                if (bDrawLine)
+                                {
+                                    if (c == DigitalColor[0])
+                                        gr.DrawRectangle(magPen, x * 8, y * 8, 8, 8);
+                                    else
+                                        gr.FillRectangle(br, x * 8, y * 8, 7, 7);
+                                }
+                                else
+                                {
+                                    gr.FillRectangle(br, x * 8, y * 8, 8, 8);
+                                }
+                            }
+                        }
+                    }
+                }
             }
             this.pictureBox1.Image = viewImage;
+        }
+
+        /// <summary>
+        /// OrigimalImageビットマップ初期化
+        /// ドラッグドロップされたファイル名もnullに
+        /// </summary>
+        /// <param name="color">初期化する色</param>
+        void ClearOrigimalImage(int color)
+        {
+            fileName = null;
+            originalImage = new Bitmap(originalSize.Width, originalSize.Height);
+
+            using (Graphics gr = Graphics.FromImage(originalImage))
+            {
+                if (viewImage == null || originalImage == null) return;
+                using (var br = new SolidBrush(DigitalColor[color])) {
+                    gr.FillRectangle(br, 0, 0, originalSize.Width, originalSize.Height);
+                };
+            }
+            DrawViewImage();
         }
     }
 }
